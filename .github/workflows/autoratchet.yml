@@ -1,0 +1,18 @@
+name: autoratchet
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # daily at 9am UTC
+  workflow_dispatch: # manual trigger
+
+jobs:
+  ratchet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python autoratchet.py
+        env:
+          BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
+          BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
+          MAX_BUFFER_DAYS: "1"
+          # BEEMINDER_GOALS: "" # leave empty to ratchet all goals, or comma-separated slugs
