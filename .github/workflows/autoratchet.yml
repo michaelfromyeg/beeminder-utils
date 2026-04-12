@@ -16,4 +16,4 @@ jobs:
           BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
           BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
           MAX_BUFFER_DAYS: "1"
-          BEEMINDER_GOALS: "duolingo,headspace,lifts,running2"
+          BEEMINDER_GOALS: "duolingo,headspace,lifts,running2,habits"

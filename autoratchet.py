@@ -5,9 +5,35 @@
 
 import json
 import os
+import time
+import urllib.error
 import urllib.request
 
 BEEMINDER_API = "https://www.beeminder.com/api/v1"
+
+MAX_RETRIES = 3
+RETRY_BACKOFF = 2
+
+
+def request_with_retry(req):
+    for attempt in range(MAX_RETRIES):
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            if e.code < 500 and e.code != 429:
+                raise
+            if attempt == MAX_RETRIES - 1:
+                raise
+            wait = RETRY_BACKOFF ** (attempt + 1)
+            print(f"  retrying in {wait}s (HTTP {e.code})...")
+            time.sleep(wait)
+        except urllib.error.URLError:
+            if attempt == MAX_RETRIES - 1:
+                raise
+            wait = RETRY_BACKOFF ** (attempt + 1)
+            print(f"  retrying in {wait}s (connection error)...")
+            time.sleep(wait)
 
 
 def api(method, path, data=None):
@@ -18,8 +44,7 @@ def api(method, path, data=None):
     req = urllib.request.Request(url, data=body, method=method)
     if body:
         req.add_header("Content-Type", "application/json")
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read())
+    return request_with_retry(req)
 
 
 def main():
