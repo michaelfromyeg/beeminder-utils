@@ -1,0 +1,20 @@
+name: habits
+
+on:
+  schedule:
+    - cron: "30 8 * * *" # daily at 8:30am UTC, before autoratchet
+  workflow_dispatch: # manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv run habits.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: "1a1c4188fa0e807387d5c70865d1172b"
+          BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
+          BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
+          BEEMINDER_HABITS_GOAL: "habits"
