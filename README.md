@@ -7,11 +7,11 @@ Inspired by [this blog post](https://nickmartinovic.com/building-an-autoratchet-
 ## Setup
 
 1. Add repo secrets (`Settings > Secrets > Actions`):
-   - `BEEMINDER_AUTH_TOKEN` — from https://www.beeminder.com/api/v1/auth_token.json
+   - `BEEMINDER_AUTH_TOKEN` - from https://www.beeminder.com/api/v1/auth_token.json
    - `BEEMINDER_USERNAME`
 2. Configure goals and buffer in `.github/workflows/autoratchet.yml`:
-   - `BEEMINDER_GOALS` — comma-separated goal slugs (leave empty for all goals)
-   - `MAX_BUFFER_DAYS` — max safety buffer before ratcheting (default: 1)
+   - `BEEMINDER_GOALS` - comma-separated goal slugs (leave empty for all goals)
+   - `MAX_BUFFER_DAYS` - max safety buffer before ratcheting (default: 1)
 3. Adjust the cron schedule as needed (default: daily at 9am UTC)
 
 ## Manual trigger
