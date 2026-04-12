@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "beeminder": {
+      "command": "uv",
+      "args": ["run", "mcp_server.py"],
+      "env": {
+        "BEEMINDER_USERNAME": "${BEEMINDER_USERNAME}",
+        "BEEMINDER_AUTH_TOKEN": "${BEEMINDER_AUTH_TOKEN}"
+      }
+    }
+  }
+}
