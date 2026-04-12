@@ -15,4 +15,4 @@ jobs:
           BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
           BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
           MAX_BUFFER_DAYS: "1"
-          # BEEMINDER_GOALS: "" # leave empty to ratchet all goals, or comma-separated slugs
+          BEEMINDER_GOALS: "duolingo,headspace,lifts,running2"
