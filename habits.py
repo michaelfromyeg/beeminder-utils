@@ -8,7 +8,8 @@ import os
 import time
 import urllib.error
 import urllib.request
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 NOTION_API = "https://api.notion.com/v1"
 BEEMINDER_API = "https://www.beeminder.com/api/v1"
@@ -70,7 +71,8 @@ def main():
     bm_username = os.environ["BEEMINDER_USERNAME"]
     bm_goal = os.environ.get("BEEMINDER_HABITS_GOAL", "habits")
 
-    today = date.today().isoformat()
+    tz = ZoneInfo(os.environ.get("TZ_NAME", "America/Los_Angeles"))
+    today = datetime.now(tz).date().isoformat()
 
     print(f"querying notion for {today}...")
     result = notion_query(

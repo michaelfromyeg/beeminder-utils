@@ -2,7 +2,7 @@ name: autoratchet
 
 on:
   schedule:
-    - cron: "0 9 * * *" # daily at 9am UTC
+    - cron: "5 7 * * *" # daily at 12:05am PT (7:05am UTC), after habits sync
   workflow_dispatch: # manual trigger
 
 jobs:

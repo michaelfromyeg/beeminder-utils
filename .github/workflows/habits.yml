@@ -2,7 +2,7 @@ name: habits
 
 on:
   schedule:
-    - cron: "30 8 * * *" # daily at 8:30am UTC, before autoratchet
+    - cron: "0 7 * * *" # daily at midnight PT (7am UTC)
   workflow_dispatch: # manual trigger
 
 jobs:
@@ -18,3 +18,4 @@ jobs:
           BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
           BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
           BEEMINDER_HABITS_GOAL: "habits"
+          TZ_NAME: "America/Los_Angeles"
