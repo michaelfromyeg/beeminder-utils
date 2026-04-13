@@ -6,6 +6,8 @@
 import json
 import os
 import urllib.request
+from typing import Any
+
 from mcp.server.fastmcp import FastMCP
 
 BEEMINDER_API = "https://www.beeminder.com/api/v1"
@@ -16,7 +18,7 @@ USERNAME = os.environ.get("BEEMINDER_USERNAME", "")
 TOKEN = os.environ.get("BEEMINDER_AUTH_TOKEN", "")
 
 
-def api(method, path, data=None):
+def api(method: str, path: str, data: dict[str, Any] | None = None) -> Any:
     url = f"{BEEMINDER_API}{path}"
     if "?" in url:
         url += f"&auth_token={TOKEN}"
@@ -32,7 +34,7 @@ def api(method, path, data=None):
         return json.loads(resp.read())
 
 
-def summarize_goal(g):
+def summarize_goal(g: dict[str, Any]) -> dict[str, Any]:
     return {
         "slug": g["slug"],
         "title": g.get("title", ""),
