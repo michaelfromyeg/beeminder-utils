@@ -47,5 +47,9 @@
       "WebFetch(domain:gelembjuk.com)",
       "WebFetch(domain:dev.to)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "beeminder"
+  ],
+  "enableAllProjectMcpServers": true
 }
