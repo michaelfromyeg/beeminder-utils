@@ -2,7 +2,7 @@ name: habits
 
 on:
   schedule:
-    - cron: "0 7 * * *" # daily at midnight PT (7am UTC)
+    - cron: "0 * * * *" # hourly; guarantees a run near midnight PT year-round (DST-proof). Idempotent via requestid, so re-runs overwrite the day's datapoint.
   workflow_dispatch: # manual trigger
 
 jobs:
