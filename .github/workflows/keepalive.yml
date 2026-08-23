@@ -1,0 +1,49 @@
+name: keepalive
+
+on:
+  schedule:
+    - cron: "0 12 1,15 * *" # twice monthly, so one skipped run can't blow the deadline
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Push the empty commit even if the repo is not quiet yet (to test this workflow)"
+        type: boolean
+        default: false
+
+# GitHub disables a repo's scheduled workflows after 60 days with no pushes, and never
+# re-enables them. This keeps the repo inside that window and recovers any workflow that
+# slipped through (as habits did in Aug 2026 while autoratchet stayed active).
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reset the inactivity clock if the repo has gone quiet
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          age_days=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          if [ "$FORCE" != "true" ] && [ "$age_days" -lt 45 ]; then
+            echo "last commit was ${age_days}d ago, no keepalive needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keepalive"
+          git push
+
+      - name: Re-enable workflows disabled for inactivity
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows" \
+            --jq '.workflows[] | select(.state == "disabled_inactivity") | "\(.id) \(.name)"' |
+            while read -r id name; do
+              echo "re-enabling $name"
+              gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/$id/enable"
+            done

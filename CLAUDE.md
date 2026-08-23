@@ -30,6 +30,8 @@ Three entry points, each a standalone `uv run` script with inline PEP 723 metada
 - `habits.py` — counts Notion DB rows due today with Status=Complete, posts the count as one datapoint to a Beeminder goal. Scheduled hourly (so a run always lands near midnight PT regardless of DST, and intraday completions sync within the hour). Autoratchet runs once daily and ratchets the `habits` goal, so it must run *after* a habits run — the hourly cadence guarantees this.
 - `mcp_server.py` — FastMCP server exposing list/get goals, datapoints, and ratchet as tools. Configured in `.mcp.json` via `uv run`.
 
+`.github/workflows/keepalive.yml` has no script: GitHub disables a repo's scheduled workflows after 60 days with no pushes and never re-enables them, so it runs twice a month to push an empty commit when the repo has been quiet for 45+ days and to re-enable anything already disabled. Without it the schedules silently stop (this is how `habits` went dark for 9 days in Aug 2026).
+
 Each script reimplements its own Beeminder `api()` helper and (for the two workflow scripts) an identical `request_with_retry` (3 retries with exponential backoff on 5xx/429/connection errors). This duplication is intentional — keeping each script self-contained so `uv run <file>.py` works with zero project setup. If you change retry or API-call behavior, update all copies.
 
 Beeminder auth is via `?auth_token=` query param (GET) or `auth_token` in the JSON body (POST). `ratchet.json` with `newsafety=0` also requires `beemergency: true`.
