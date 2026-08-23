@@ -16,4 +16,5 @@ jobs:
           BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
           BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
           MAX_BUFFER_DAYS: "1"
-          BEEMINDER_GOALS: "duolingo:1,headspace:1,lifts:3,running2:4,habits:1"
+          # 0 = eep day every day (no free days); higher buffers suit lower-frequency goals
+          BEEMINDER_GOALS: "duolingo:0,headspace:0,lifts:3,running2:4,habits:0"

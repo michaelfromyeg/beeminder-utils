@@ -83,3 +83,43 @@ def test_main_per_goal_buffers(mock_api, monkeypatch):
         {"auth_token": "tok", "newsafety": 1},
     )
     # lifts (safebuf 2 <= 3) was not ratcheted — only 3 calls total
+
+
+def test_parse_zero_buffer():
+    result = parse_goals_config("duolingo:0,lifts:3", default_buffer=1)
+    assert result == {"duolingo": 0, "lifts": 3}
+
+
+@patch("autoratchet.api")
+def test_main_ratchets_to_zero_with_beemergency(mock_api, monkeypatch):
+    monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
+    monkeypatch.setenv("BEEMINDER_USERNAME", "user")
+    monkeypatch.setenv("BEEMINDER_GOALS", "duolingo:0")
+
+    mock_api.return_value = {"slug": "duolingo", "safebuf": 1}
+
+    main()
+
+    # newsafety=0 is rejected by Beeminder unless beemergency is also set
+    assert mock_api.call_count == 2
+    assert mock_api.call_args_list[1] == call(
+        "POST",
+        "/users/user/goals/duolingo/ratchet.json",
+        {"auth_token": "tok", "newsafety": 0, "beemergency": True},
+    )
+
+
+@patch("autoratchet.api")
+def test_main_skips_goal_already_at_zero(mock_api, monkeypatch):
+    monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
+    monkeypatch.setenv("BEEMINDER_USERNAME", "user")
+    monkeypatch.setenv("BEEMINDER_GOALS", "duolingo:0")
+
+    mock_api.return_value = {"slug": "duolingo", "safebuf": 0}
+
+    main()
+
+    assert mock_api.call_count == 1
+    assert mock_api.call_args_list[0] == call(
+        "GET", "/users/user/goals/duolingo.json?auth_token=tok"
+    )
