@@ -2,12 +2,12 @@ import json
 from unittest.mock import patch
 
 from mcp_server import (
-    summarize_goal,
-    list_goals,
-    get_goal,
-    get_datapoints,
     create_datapoint,
+    get_datapoints,
+    get_goal,
+    list_goals,
     ratchet_goal,
+    summarize_goal,
 )
 
 SAMPLE_GOAL = {

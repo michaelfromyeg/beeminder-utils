@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["mcp"]
+# dependencies = ["mcp>=2,<3"]
 # ///
 
 import json
@@ -8,11 +8,11 @@ import os
 import urllib.request
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 BEEMINDER_API = "https://www.beeminder.com/api/v1"
 
-mcp = FastMCP("beeminder")
+mcp = MCPServer("beeminder")
 
 USERNAME = os.environ.get("BEEMINDER_USERNAME", "")
 TOKEN = os.environ.get("BEEMINDER_AUTH_TOKEN", "")

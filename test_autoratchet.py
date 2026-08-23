@@ -1,5 +1,6 @@
-from unittest.mock import patch, call
-from autoratchet import parse_goals_config, main
+from unittest.mock import call, patch
+
+from autoratchet import main, parse_goals_config
 
 
 def test_parse_with_per_goal_buffer():

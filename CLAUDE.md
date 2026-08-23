@@ -27,7 +27,7 @@ Trigger workflows manually: `gh workflow run autoratchet` / `gh workflow run hab
 Three entry points, each a standalone `uv run` script with inline PEP 723 metadata (`# /// script`) — no shared package, no requirements file:
 
 - `autoratchet.py` — for each configured goal, reads `safebuf` and ratchets down to the goal's max-buffer if over. Scheduled daily.
-- `habits.py` — counts Notion DB rows due today with Status=Complete, posts the count as one datapoint to a Beeminder goal. Scheduled hourly (so a run always lands near midnight PT regardless of DST, and intraday completions sync within the hour). Autoratchet runs once daily and ratchets the `habits` goal, so it must run *after* a habits run — the hourly cadence guarantees this.
+- `habits.py` — fetches all Notion DB rows due today (paginated), counts those with Status=Complete, posts the count as one datapoint to a Beeminder goal. Status is counted client-side because the row total doubles as a sanity check: a revoked `NOTION_TOKEN` returns HTTP 200 with zero rows, so filtering server-side made a broken token look like a real 0. Zero rows due now aborts the run instead of posting 0. Note `Skipped` belongs to Notion's `complete` status *group* but deliberately does not count. Scheduled hourly (so a run always lands near midnight PT regardless of DST, and intraday completions sync within the hour). Autoratchet runs once daily and ratchets the `habits` goal, so it must run *after* a habits run — the hourly cadence guarantees this.
 - `mcp_server.py` — FastMCP server exposing list/get goals, datapoints, and ratchet as tools. Configured in `.mcp.json` via `uv run`.
 
 `.github/workflows/keepalive.yml` has no script: GitHub disables a repo's scheduled workflows after 60 days with no pushes and never re-enables them, so it runs twice a month to push an empty commit when the repo has been quiet for 45+ days and to re-enable anything already disabled. Without it the schedules silently stop (this is how `habits` went dark for 9 days in Aug 2026).
@@ -40,11 +40,11 @@ Beeminder auth is via `?auth_token=` query param (GET) or `auth_token` in the JS
 
 ## Config
 
-`BEEMINDER_GOALS` (autoratchet) is a comma list with optional per-goal buffer overrides: `"duolingo:1,lifts:3,running2:4,habits"`. Entries without `:N` fall back to `MAX_BUFFER_DAYS`. Higher buffers suit lower-frequency goals (e.g. 4 for a 2x/week goal) to preserve scheduling flexibility. Live values live in `.github/workflows/autoratchet.yml`; this is the source of truth for which goals are managed.
+`BEEMINDER_GOALS` (autoratchet) is a comma list with optional per-goal buffer overrides: `"duolingo:1,lifts:3,running2:4,habits"`. Entries without `:N` fall back to `MAX_BUFFER_DAYS`. `safebuf` is days you can do *nothing* without derailing, so `:1` grants one free day and `:0` makes every day an eep day — use 0 for daily habits (`duolingo`, `headspace`, `habits`) and higher buffers for lower-frequency goals (e.g. 4 for a 2x/week goal) to preserve scheduling flexibility. Ratcheting to 0 requires `beemergency: true`, and is irreversible inside the akrasia horizon. Live values live in `.github/workflows/autoratchet.yml`; this is the source of truth for which goals are managed.
 
 Env vars: `BEEMINDER_USERNAME`, `BEEMINDER_AUTH_TOKEN` (all); `NOTION_TOKEN`, `NOTION_DATABASE_ID`, `BEEMINDER_HABITS_GOAL`, `TZ_NAME` (habits). Workflows read these from repo secrets/workflow env; local runs use `.env` auto-loaded by `direnv` (run `direnv allow` after cloning).
 
 ## Conventions
 
-- Python 3.12+, managed by `uv`. No dependencies beyond stdlib except `mcp` (server only).
+- Python 3.12+, managed by `uv`. No dependencies beyond stdlib except `mcp` (server only), pinned `mcp>=2,<3` — it was left unpinned and floated to 2.0, which renamed `mcp.server.fastmcp.FastMCP` to `mcp.server.mcpserver.MCPServer` and broke the whole test suite at collection.
 - Tests mock the `api()` function and assert on exact call args (method, path, body) — match that style when adding tests.
