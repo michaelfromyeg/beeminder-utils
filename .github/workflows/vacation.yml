@@ -1,0 +1,36 @@
+name: vacation
+
+# Beeminder has no archive, pause, or break endpoint, and PUT roadall "must not make
+# the goal easier between now and the akrasia horizon". So this can only ever schedule
+# a break a week out — to stop a goal today, archive it in the Beeminder UI.
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "How many days the break lasts"
+        type: string
+        default: "7"
+      start:
+        description: "First day of the break (YYYY-MM-DD). Blank = the akrasia horizon, today + 7."
+        type: string
+        default: ""
+      dry_run:
+        description: "Print the road matrix without writing it"
+        type: boolean
+        default: true
+
+jobs:
+  vacation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: echo "BEEMINDER_GOALS=$(cat goals.conf)" >> "$GITHUB_ENV"
+      - run: uv run vacation.py
+        env:
+          BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
+          BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
+          TZ_NAME: "America/Los_Angeles"
+          BREAK_DAYS: ${{ inputs.days }}
+          BREAK_START: ${{ inputs.start }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}

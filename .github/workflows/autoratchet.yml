@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+      - run: echo "BEEMINDER_GOALS=$(cat goals.conf)" >> "$GITHUB_ENV"
       - run: uv run autoratchet.py
         env:
           BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
@@ -20,5 +21,3 @@ jobs:
           TZ_NAME: "America/Los_Angeles"
           FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
           MAX_BUFFER_DAYS: "1"
-          # 0 = eep day every day (no free days); higher buffers suit lower-frequency goals
-          BEEMINDER_GOALS: "duolingo:0,headspace:0,lifts:3,running2:4,habits:0"
