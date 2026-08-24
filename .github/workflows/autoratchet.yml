@@ -2,7 +2,9 @@ name: autoratchet
 
 on:
   schedule:
-    - cron: "5 7 * * *" # daily at 12:05am PT (7:05am UTC), after habits sync
+    - cron: "5 * * * *" # hourly; the script acts only in the first hour of the local
+      # day (see TZ_NAME). A fixed UTC time cannot do this: 7:05am UTC is 00:05 PDT but
+      # 23:05 PST, which would ratchet before midnight for half the year.
   workflow_dispatch: # manual trigger
 
 jobs:
@@ -15,6 +17,8 @@ jobs:
         env:
           BEEMINDER_AUTH_TOKEN: ${{ secrets.BEEMINDER_AUTH_TOKEN }}
           BEEMINDER_USERNAME: ${{ secrets.BEEMINDER_USERNAME }}
+          TZ_NAME: "America/Los_Angeles"
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
           MAX_BUFFER_DAYS: "1"
           # 0 = eep day every day (no free days); higher buffers suit lower-frequency goals
           BEEMINDER_GOALS: "duolingo:0,headspace:0,lifts:3,running2:4,habits:0"

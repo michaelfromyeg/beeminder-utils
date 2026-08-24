@@ -8,7 +8,9 @@ import os
 import time
 import urllib.error
 import urllib.request
+from datetime import datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 BEEMINDER_API = "https://www.beeminder.com/api/v1"
 
@@ -63,7 +65,25 @@ def parse_goals_config(goals_str: str, default_buffer: int) -> dict[str, int]:
     return config
 
 
+def local_hour(tz_name: str) -> int:
+    return datetime.now(ZoneInfo(tz_name)).hour
+
+
 def main() -> None:
+    # Cron is UTC, so a fixed daily UTC time drifts across the local midnight twice a
+    # year: "5 7 * * *" was 00:05 PDT but 23:05 PST, i.e. it would have ratcheted the
+    # *previous* day. Instead the workflow fires hourly and only the first hour of the
+    # local day does the work, which is DST-proof and survives a move to another zone
+    # (set TZ_NAME). Ratcheting later in the day would be worse than useless: work
+    # already logged that morning earns a day of buffer, and a same-day ratchet to 0
+    # would take it away and demand the work twice.
+    tz_name = os.environ.get("TZ_NAME", "America/Los_Angeles")
+    if os.environ.get("FORCE") != "1":
+        hour = local_hour(tz_name)
+        if hour != 0:
+            print(f"{hour:02d}:xx in {tz_name}, not the start of the day. skipping.")
+            return
+
     token = os.environ["BEEMINDER_AUTH_TOKEN"]
     username = os.environ["BEEMINDER_USERNAME"]
     max_buffer = int(os.environ.get("MAX_BUFFER_DAYS", "1"))

@@ -32,6 +32,7 @@ def test_main_skips_within_limit(mock_api, monkeypatch):
     monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
     monkeypatch.setenv("BEEMINDER_USERNAME", "user")
     monkeypatch.setenv("BEEMINDER_GOALS", "lifts:3")
+    monkeypatch.setenv("FORCE", "1")
 
     mock_api.return_value = {"slug": "lifts", "safebuf": 2}
 
@@ -49,6 +50,7 @@ def test_main_ratchets_when_over_limit(mock_api, monkeypatch):
     monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
     monkeypatch.setenv("BEEMINDER_USERNAME", "user")
     monkeypatch.setenv("BEEMINDER_GOALS", "lifts:3")
+    monkeypatch.setenv("FORCE", "1")
 
     mock_api.return_value = {"slug": "lifts", "safebuf": 6}
 
@@ -67,6 +69,7 @@ def test_main_per_goal_buffers(mock_api, monkeypatch):
     monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
     monkeypatch.setenv("BEEMINDER_USERNAME", "user")
     monkeypatch.setenv("BEEMINDER_GOALS", "duolingo:1,lifts:3")
+    monkeypatch.setenv("FORCE", "1")
 
     mock_api.side_effect = [
         {"slug": "duolingo", "safebuf": 5},  # GET duolingo
@@ -96,6 +99,7 @@ def test_main_ratchets_to_zero_with_beemergency(mock_api, monkeypatch):
     monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
     monkeypatch.setenv("BEEMINDER_USERNAME", "user")
     monkeypatch.setenv("BEEMINDER_GOALS", "duolingo:0")
+    monkeypatch.setenv("FORCE", "1")
 
     mock_api.return_value = {"slug": "duolingo", "safebuf": 1}
 
@@ -115,6 +119,7 @@ def test_main_skips_goal_already_at_zero(mock_api, monkeypatch):
     monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
     monkeypatch.setenv("BEEMINDER_USERNAME", "user")
     monkeypatch.setenv("BEEMINDER_GOALS", "duolingo:0")
+    monkeypatch.setenv("FORCE", "1")
 
     mock_api.return_value = {"slug": "duolingo", "safebuf": 0}
 
@@ -124,3 +129,56 @@ def test_main_skips_goal_already_at_zero(mock_api, monkeypatch):
     assert mock_api.call_args_list[0] == call(
         "GET", "/users/user/goals/duolingo.json?auth_token=tok"
     )
+
+
+@patch("autoratchet.api")
+@patch("autoratchet.local_hour")
+def test_main_skips_outside_the_first_hour_of_the_local_day(
+    mock_hour, mock_api, monkeypatch
+):
+    # A fixed UTC cron lands at 23:xx local half the year; ratcheting then would target
+    # the wrong day, and a same-day ratchet can demand already-logged work twice
+    monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
+    monkeypatch.setenv("BEEMINDER_USERNAME", "user")
+    monkeypatch.setenv("BEEMINDER_GOALS", "duolingo:0")
+    monkeypatch.delenv("FORCE", raising=False)
+    mock_hour.return_value = 23
+
+    main()
+
+    assert mock_api.call_count == 0
+
+
+@patch("autoratchet.api")
+@patch("autoratchet.local_hour")
+def test_main_runs_in_the_first_hour_of_the_local_day(mock_hour, mock_api, monkeypatch):
+    monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
+    monkeypatch.setenv("BEEMINDER_USERNAME", "user")
+    monkeypatch.setenv("BEEMINDER_GOALS", "duolingo:0")
+    monkeypatch.delenv("FORCE", raising=False)
+    mock_hour.return_value = 0
+    mock_api.return_value = {"slug": "duolingo", "safebuf": 2}
+
+    main()
+
+    assert mock_api.call_args_list[1] == call(
+        "POST",
+        "/users/user/goals/duolingo/ratchet.json",
+        {"auth_token": "tok", "newsafety": 0, "beemergency": True},
+    )
+
+
+@patch("autoratchet.api")
+@patch("autoratchet.local_hour")
+def test_main_force_bypasses_the_hour_guard(mock_hour, mock_api, monkeypatch):
+    # workflow_dispatch sets FORCE=1 so a manual run works at any hour
+    monkeypatch.setenv("BEEMINDER_AUTH_TOKEN", "tok")
+    monkeypatch.setenv("BEEMINDER_USERNAME", "user")
+    monkeypatch.setenv("BEEMINDER_GOALS", "lifts:3")
+    monkeypatch.setenv("FORCE", "1")
+    mock_hour.return_value = 14
+    mock_api.return_value = {"slug": "lifts", "safebuf": 1}
+
+    main()
+
+    assert mock_api.call_count == 1
